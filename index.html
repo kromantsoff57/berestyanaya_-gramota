@@ -107,7 +107,7 @@
       color: #ab8f60;
     }
 
-    /* ОСНОВНАЯ ИГРА (была ранее, но теперь обёрнута в .game-screen) */
+    /* ОСНОВНАЯ ИГРА */
     .game-container {
       background: #fdf5e3;
       background-image: repeating-linear-gradient(45deg, rgba(190,150,90,0.08) 0px, rgba(190,150,90,0.08) 2px, transparent 2px, transparent 10px);
@@ -328,10 +328,20 @@
 
 <script>
   // ------------------ ДАННЫЕ ИГРЫ ------------------
+  // Правильные ответы: челобитная, ябетник, погородье
   const GRAMOTY = [
-    { correct: "челобитная" },
-    { correct: "ябетник" },
-    { correct: "поголовье" }
+    { 
+      correct: "челобитная",
+      variants: ["челобитная", "челобитье", "челобитня", "челобитная грамота"]
+    },
+    { 
+      correct: "ябетник",
+      variants: ["ябетник", "ябедник", "ябетникъ", "обвинитель"]
+    },
+    { 
+      correct: "погородье",
+      variants: ["погородье", "погородие", "погородие", "погородъе"]
+    }
   ];
 
   let currentIndex = 0;
@@ -348,7 +358,27 @@
   let resetBtn = document.getElementById('resetBtn');
   let messageBlock = document.getElementById('messageBlock');
 
-  // Функции игры
+  // Функция нормализации строки (приводим к нижнему регистру, убираем лишние символы)
+  function normalize(str) {
+    return str.trim().toLowerCase()
+      .replace(/[ё]/g, 'е')
+      .replace(/[^а-яa-z]/g, '');
+  }
+
+  // Проверка ответа с учётом вариантов
+  function isAnswerCorrect(userAnswer, gramotaData) {
+    const normalizedUser = normalize(userAnswer);
+    // проверяем основной правильный ответ
+    if (normalizedUser === normalize(gramotaData.correct)) return true;
+    // проверяем дополнительные варианты
+    if (gramotaData.variants) {
+      for (let variant of gramotaData.variants) {
+        if (normalizedUser === normalize(variant)) return true;
+      }
+    }
+    return false;
+  }
+
   function loadGameState() {
     if (currentIndex >= GRAMOTY.length) {
       completed = true;
@@ -367,12 +397,6 @@
     messageBlock.className = 'message';
     answerField.focus();
     completed = false;
-  }
-
-  function normalize(str) {
-    return str.trim().toLowerCase()
-      .replace(/[ё]/g, 'е')
-      .replace(/[^а-яa-z]/g, '');
   }
 
   function handleCheck() {
@@ -395,10 +419,9 @@
     }
 
     const currentGram = GRAMOTY[currentIndex];
-    const normUser = normalize(userAnswer);
-    const normCorrect = normalize(currentGram.correct);
+    const correct = isAnswerCorrect(userAnswer, currentGram);
 
-    if (normUser === normCorrect) {
+    if (correct) {
       score++;
       scoreDisplaySpan.innerText = `${score} / ${GRAMOTY.length}`;
       messageBlock.innerHTML = '✅ Верно! Ты верно определил понятие.';
@@ -408,7 +431,9 @@
       checkBtn.disabled = true;
       nextBtn.disabled = false;
     } else {
-      messageBlock.innerHTML = '❌ Неверно. Попробуй ещё раз.';
+      // Показываем правильный ответ для запоминания
+      const correctAnswer = currentGram.correct;
+      messageBlock.innerHTML = `❌ Неверно. Правильный ответ: «${correctAnswer}». Попробуй запомнить!`;
       messageBlock.className = 'message wrong-msg';
       answerField.value = '';
       answerField.focus();
@@ -450,7 +475,8 @@
       <div class="gramota-number">📜 ИТОГ</div>
       <div class="gramota-sub">${finalMsg}</div>
     `;
-    document.querySelector('.look-at-board').style.display = 'none';
+    const lookAtBoard = document.querySelector('.look-at-board');
+    if (lookAtBoard) lookAtBoard.style.display = 'none';
     messageBlock.innerHTML = finalMsg;
     messageBlock.className = 'message correct-msg';
   }
@@ -466,7 +492,8 @@
       <div class="gramota-number">ГРАМОТА № <span id="currentIdx">1</span></div>
       <div class="gramota-sub">посмотри на доску</div>
     `;
-    document.querySelector('.look-at-board').style.display = 'block';
+    const lookAtBoard = document.querySelector('.look-at-board');
+    if (lookAtBoard) lookAtBoard.style.display = 'block';
     // обновляем ссылки на элементы, которые могли быть пересозданы
     currentIdxSpan = document.getElementById('currentIdx');
     scoreDisplaySpan = document.getElementById('scoreDisplay');
@@ -492,15 +519,11 @@
   function showGame() {
     splashScreen.classList.add('hidden');
     gameScreen.classList.remove('hidden');
-    // инициализируем игру при первом запуске
-    resetGame(); // сбросит всё и загрузит первую грамоту
+    resetGame();
   }
 
   startButton.addEventListener('click', showGame);
-
-  // предзагрузка игры (чтобы при старте всё было готово)
-  // но игра пока скрыта, инициализируем состояние
-  resetGame(); // вызываем сейчас, но gameScreen скрыт – просто подготовим переменные
+  resetGame();
 </script>
 </body>
 </html>
