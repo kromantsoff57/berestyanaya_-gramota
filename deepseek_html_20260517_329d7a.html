@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Берестяные грамоты — угадай понятие</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #4a2e1a;
+      background-image: radial-gradient(circle at 10% 20%, #705438, #352210);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Georgia', serif;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* ОБЩИЕ КОНТЕЙНЕРЫ */
+    .screen {
+      transition: opacity 0.5s ease, visibility 0.5s;
+      width: 100%;
+      max-width: 700px;
+    }
+    .screen.hidden {
+      display: none;
+    }
+
+    /* ЗАСТАВКА (СПЛЭШ) */
+    .splash {
+      background: #fdf5e3;
+      background-image: repeating-linear-gradient(45deg, rgba(190,150,90,0.08) 0px, rgba(190,150,90,0.08) 2px, transparent 2px, transparent 10px);
+      border-radius: 60px 20px 60px 20px;
+      box-shadow: 0 20px 35px rgba(0,0,0,0.6), inset 0 1px 4px rgba(255,245,200,0.8);
+      padding: 40px 30px;
+      text-align: center;
+      position: relative;
+      animation: fadeInScale 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+    @keyframes fadeInScale {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .splash-icon {
+      font-size: 5.5rem;
+      margin-bottom: 20px;
+      filter: drop-shadow(4px 6px 0 rgba(0,0,0,0.2));
+    }
+    .splash-title {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: #4b2a12;
+      text-shadow: 3px 3px 0 #e9cf97;
+      letter-spacing: 4px;
+      margin-bottom: 15px;
+    }
+    .splash-sub {
+      font-size: 1.1rem;
+      color: #7a5c36;
+      background: #f1e4c6;
+      display: inline-block;
+      padding: 6px 20px;
+      border-radius: 40px;
+      margin-bottom: 40px;
+      font-style: italic;
+    }
+    .splash-decor {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 30px 0;
+      font-size: 1.5rem;
+      opacity: 0.7;
+    }
+    .btn-start-game {
+      background: #8b623f;
+      border: none;
+      padding: 16px 48px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      border-radius: 60px;
+      color: #fef0da;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      font-family: inherit;
+      letter-spacing: 2px;
+    }
+    .btn-start-game:hover {
+      background: #a87749;
+      transform: scale(1.02);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+    }
+    .btn-start-game:active {
+      transform: scale(0.98);
+    }
+    .splash-footer {
+      margin-top: 40px;
+      font-size: 0.75rem;
+      color: #ab8f60;
+    }
+
+    /* ОСНОВНАЯ ИГРА (была ранее, но теперь обёрнута в .game-screen) */
+    .game-container {
+      background: #fdf5e3;
+      background-image: repeating-linear-gradient(45deg, rgba(190,150,90,0.08) 0px, rgba(190,150,90,0.08) 2px, transparent 2px, transparent 10px);
+      border-radius: 40px 16px 40px 16px;
+      box-shadow: 0 20px 35px rgba(0,0,0,0.6), inset 0 1px 4px rgba(255,245,200,0.8);
+      padding: 28px 24px 36px;
+      transition: 0.2s;
+    }
+
+    .title {
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      color: #3d2a14;
+      text-shadow: 2px 2px 0 #e9d49c;
+      letter-spacing: 2px;
+      border-bottom: 3px solid #c9a15b;
+      display: inline-block;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .history-link {
+      background: #e3d2b0;
+      border-radius: 60px;
+      padding: 10px 18px;
+      margin: 10px 0 20px 0;
+      font-size: 0.9rem;
+      text-align: center;
+      color: #2f2a1f;
+      border-left: 8px solid #b87c3a;
+      box-shadow: inset 0 0 0 1px #fff2db;
+    }
+    .history-link strong {
+      color: #a55317;
+    }
+
+    .birch-header {
+      background: #e9dbbc;
+      border-radius: 60px 20px 60px 20px;
+      text-align: center;
+      padding: 16px 10px;
+      margin-bottom: 24px;
+      border: 1px solid #c7a15e;
+      box-shadow: inset 0 0 0 3px #fef0cf, 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .gramota-number {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #5e3a1c;
+      letter-spacing: 2px;
+    }
+    .gramota-sub {
+      font-size: 0.85rem;
+      color: #7a5c36;
+      font-style: italic;
+    }
+    .look-at-board {
+      background: #f2e5cb;
+      border-radius: 30px;
+      padding: 12px;
+      margin: 10px 0 20px;
+      text-align: center;
+      font-weight: 500;
+      color: #8b5a2b;
+      font-size: 0.95rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+    .answer-input {
+      flex: 2;
+      min-width: 200px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      background: #fffef5;
+      border: 2px solid #bc8b4a;
+      border-radius: 50px;
+      font-family: inherit;
+      outline: none;
+      text-align: center;
+      font-weight: bold;
+      color: #3d2a14;
+    }
+    .answer-input:focus {
+      border-color: #d6933a;
+      box-shadow: 0 0 0 3px rgba(214,147,58,0.3);
+    }
+    button {
+      background: #8b623f;
+      border: none;
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 50px;
+      color: #fef0da;
+      cursor: pointer;
+      transition: 0.1s linear;
+      font-family: inherit;
+    }
+    button:hover {
+      background: #a87749;
+      transform: scale(0.97);
+    }
+    button:active {
+      background: #6f4d2c;
+    }
+    .next-btn {
+      background: #567c3a;
+    }
+    .next-btn:hover {
+      background: #6d9947;
+    }
+
+    .progress-area {
+      display: flex;
+      justify-content: space-between;
+      background: #dac68c;
+      border-radius: 50px;
+      padding: 8px 18px;
+      margin: 20px 0 12px;
+      font-weight: bold;
+      color: #2a2418;
+    }
+    .score {
+      background: #4a3520;
+      padding: 4px 14px;
+      border-radius: 40px;
+      color: #fbe7b0;
+    }
+    .message {
+      text-align: center;
+      padding: 10px;
+      border-radius: 50px;
+      margin-top: 15px;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+    .correct-msg {
+      background: #cfe6c3;
+      color: #2c612c;
+    }
+    .wrong-msg {
+      background: #ffe0d4;
+      color: #bc4a2c;
+    }
+    footer {
+      font-size: 0.7rem;
+      text-align: center;
+      margin-top: 24px;
+      color: #ab8f60;
+    }
+    @media (max-width: 500px) {
+      .game-container { padding: 18px; }
+      .gramota-number { font-size: 1.4rem; }
+      .splash-title { font-size: 2rem; }
+      .btn-start-game { padding: 12px 32px; font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ЗАСТАВКА -->
+<div id="splashScreen" class="screen splash">
+  <div class="splash-icon">📜🍂</div>
+  <div class="splash-title">БЕРЕСТЯНЫЕ ГРАМОТЫ</div>
+  <div class="splash-sub">Историческая игра-расшифровка</div>
+  <div class="splash-decor">
+    <span>✍️</span> <span>📖</span> <span>🏛️</span> <span>🖋️</span>
+  </div>
+  <button id="startGameBtn" class="btn-start-game">⚔️ НАЧАТЬ ИГРУ ⚔️</button>
+  <div class="splash-footer">Погрузись в мир древнерусских документов</div>
+</div>
+
+<!-- ОСНОВНАЯ ИГРА (изначально скрыта) -->
+<div id="gameScreen" class="screen hidden">
+  <div class="game-container">
+    <div class="title">📜 БЕРЕСТЯНЫЕ ГРАМОТЫ</div>
+    
+    <div class="history-link">
+      📖 <strong>Связь с предметом «История»</strong><br>
+      Берестяные грамоты — подлинные письменные источники Древней Руси (XI–XV вв.). 
+      Они помогают историкам изучать повседневность, право, налоги и социальные отношения. 
+      Расшифровывая понятия из грамот, вы погружаетесь в работу настоящего историка-исследователя!
+    </div>
+
+    <div class="birch-header">
+      <div class="gramota-number">ГРАМОТА № <span id="currentIdx">1</span></div>
+      <div class="gramota-sub">посмотри на доску</div>
+    </div>
+    <div class="look-at-board">
+      🧾 Текст грамоты написан на доске. Внимательно прочитай его и определи ключевое историческое понятие.
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="answerField" class="answer-input" placeholder="Впишите историческое понятие..." autocomplete="off">
+      <button id="checkBtn">📜 ПРОВЕРИТЬ</button>
+    </div>
+
+    <div class="progress-area">
+      <span>📖 РАСШИФРОВАНО</span>
+      <span class="score" id="scoreDisplay">0 / 3</span>
+    </div>
+
+    <div id="messageBlock" class="message"></div>
+    <div style="display: flex; gap: 12px; justify-content: center; margin-top: 12px;">
+      <button id="nextBtn" class="next-btn" disabled>➡ ДАЛЕЕ</button>
+      <button id="resetBtn">🔄 НАЧАТЬ ЗАНОВО</button>
+    </div>
+    <footer>✍️ Введи слово, которое является главным историческим термином в этой грамоте</footer>
+  </div>
+</div>
+
+<script>
+  // ------------------ ДАННЫЕ ИГРЫ ------------------
+  const GRAMOTY = [
+    { correct: "челобитная" },
+    { correct: "ябетник" },
+    { correct: "поголовье" }
+  ];
+
+  let currentIndex = 0;
+  let score = 0;
+  let answered = false;
+  let completed = false;
+
+  // DOM элементы игры
+  let currentIdxSpan = document.getElementById('currentIdx');
+  let scoreDisplaySpan = document.getElementById('scoreDisplay');
+  let answerField = document.getElementById('answerField');
+  let checkBtn = document.getElementById('checkBtn');
+  let nextBtn = document.getElementById('nextBtn');
+  let resetBtn = document.getElementById('resetBtn');
+  let messageBlock = document.getElementById('messageBlock');
+
+  // Функции игры
+  function loadGameState() {
+    if (currentIndex >= GRAMOTY.length) {
+      completed = true;
+      finishGame();
+      return;
+    }
+    currentIdxSpan.innerText = currentIndex + 1;
+    scoreDisplaySpan.innerText = `${score} / ${GRAMOTY.length}`;
+    
+    answered = false;
+    answerField.disabled = false;
+    answerField.value = '';
+    checkBtn.disabled = false;
+    nextBtn.disabled = true;
+    messageBlock.innerHTML = '';
+    messageBlock.className = 'message';
+    answerField.focus();
+    completed = false;
+  }
+
+  function normalize(str) {
+    return str.trim().toLowerCase()
+      .replace(/[ё]/g, 'е')
+      .replace(/[^а-яa-z]/g, '');
+  }
+
+  function handleCheck() {
+    if (completed) {
+      messageBlock.innerHTML = 'Игра окончена. Нажми «Начать заново».';
+      messageBlock.className = 'message wrong-msg';
+      return;
+    }
+    if (answered) {
+      messageBlock.innerHTML = 'Ты уже угадал это понятие! Переходи к следующей грамоте.';
+      messageBlock.className = 'message wrong-msg';
+      return;
+    }
+
+    const userAnswer = answerField.value.trim();
+    if (userAnswer === "") {
+      messageBlock.innerHTML = 'Напиши историческое понятие, которое встретилось в грамоте.';
+      messageBlock.className = 'message wrong-msg';
+      return;
+    }
+
+    const currentGram = GRAMOTY[currentIndex];
+    const normUser = normalize(userAnswer);
+    const normCorrect = normalize(currentGram.correct);
+
+    if (normUser === normCorrect) {
+      score++;
+      scoreDisplaySpan.innerText = `${score} / ${GRAMOTY.length}`;
+      messageBlock.innerHTML = '✅ Верно! Ты верно определил понятие.';
+      messageBlock.className = 'message correct-msg';
+      answered = true;
+      answerField.disabled = true;
+      checkBtn.disabled = true;
+      nextBtn.disabled = false;
+    } else {
+      messageBlock.innerHTML = '❌ Неверно. Попробуй ещё раз.';
+      messageBlock.className = 'message wrong-msg';
+      answerField.value = '';
+      answerField.focus();
+    }
+  }
+
+  function nextGramota() {
+    if (!answered && currentIndex < GRAMOTY.length) {
+      messageBlock.innerHTML = 'Сначала проверь ответ на текущую грамоту!';
+      messageBlock.className = 'message wrong-msg';
+      return;
+    }
+    if (currentIndex + 1 >= GRAMOTY.length) {
+      currentIndex++;
+      completed = true;
+      finishGame();
+      return;
+    }
+    currentIndex++;
+    loadGameState();
+  }
+
+  function finishGame() {
+    completed = true;
+    answerField.disabled = true;
+    checkBtn.disabled = true;
+    nextBtn.disabled = true;
+    const total = GRAMOTY.length;
+    let finalMsg = '';
+    if (score === total) {
+      finalMsg = `🎉 Блестяще! Ты расшифровал все ${total} грамот и доказал связь с историей! Ты — настоящий исследователь древнерусских документов. 🎉`;
+    } else if (score >= total / 2) {
+      finalMsg = `📖 Хорошо! Ты угадал ${score} из ${total}. Обрати внимание на текст грамот и попробуй пройти ещё раз.`;
+    } else {
+      finalMsg = `🌿 Ты угадал ${score} из ${total}. Не расстраивайся! История открывается через практику. Попробуй ещё раз.`;
+    }
+    const birchHeader = document.querySelector('.birch-header');
+    birchHeader.innerHTML = `
+      <div class="gramota-number">📜 ИТОГ</div>
+      <div class="gramota-sub">${finalMsg}</div>
+    `;
+    document.querySelector('.look-at-board').style.display = 'none';
+    messageBlock.innerHTML = finalMsg;
+    messageBlock.className = 'message correct-msg';
+  }
+
+  function resetGame() {
+    currentIndex = 0;
+    score = 0;
+    answered = false;
+    completed = false;
+    // восстанавливаем внешний вид
+    const birchHeader = document.querySelector('.birch-header');
+    birchHeader.innerHTML = `
+      <div class="gramota-number">ГРАМОТА № <span id="currentIdx">1</span></div>
+      <div class="gramota-sub">посмотри на доску</div>
+    `;
+    document.querySelector('.look-at-board').style.display = 'block';
+    // обновляем ссылки на элементы, которые могли быть пересозданы
+    currentIdxSpan = document.getElementById('currentIdx');
+    scoreDisplaySpan = document.getElementById('scoreDisplay');
+    loadGameState();
+  }
+
+  // привязка событий игры
+  checkBtn.addEventListener('click', handleCheck);
+  nextBtn.addEventListener('click', nextGramota);
+  resetBtn.addEventListener('click', resetGame);
+  answerField.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !checkBtn.disabled && !completed) {
+      e.preventDefault();
+      handleCheck();
+    }
+  });
+
+  // ---------- УПРАВЛЕНИЕ ЗАСТАВКОЙ И ИГРОЙ ----------
+  const splashScreen = document.getElementById('splashScreen');
+  const gameScreen = document.getElementById('gameScreen');
+  const startButton = document.getElementById('startGameBtn');
+
+  function showGame() {
+    splashScreen.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    // инициализируем игру при первом запуске
+    resetGame(); // сбросит всё и загрузит первую грамоту
+  }
+
+  startButton.addEventListener('click', showGame);
+
+  // предзагрузка игры (чтобы при старте всё было готово)
+  // но игра пока скрыта, инициализируем состояние
+  resetGame(); // вызываем сейчас, но gameScreen скрыт – просто подготовим переменные
+</script>
+</body>
+</html>
